@@ -49,12 +49,18 @@ import os
 import random
 import shutil
 import sys
+import matplotlib.pyplot as plt
+sys.path.insert(0, '/usr/local/lib/python2.7/dist-packages')
+#sys.path.insert(0, '/home/shamit/projects/fcl')
+#sys.path.insert(0, '/home/shamit/projects')
+#sys.path.insert(0, '/home/shamit/projects/dex-net/deps/gqcnn/gqcnn/grasping')
 import time
 
 from autolab_core import Point, RigidTransform, YamlConfig
 import autolab_core.utils as utils
-from gqcnn import Grasp2D
-from gqcnn import Visualizer as vis2d
+# from gqcnn.grasping import Grasp2D
+#from gqcnn import Grasp2D
+#from gqcnn import Visualizer as vis2d
 from meshpy import ObjFile, RenderMode, SceneObject, UniformPlanarWorksurfaceImageRandomVariable
 from perception import CameraIntrinsics, BinaryImage, DepthImage
 
@@ -230,6 +236,7 @@ def generate_gqcnn_dataset(dataset_path,
     
     obj = dataset[obj_keys[0]]
     grasps = dataset.grasps(obj.key, gripper=gripper.name)
+    print("Number of grasps sampled are:", len(grasps))
     grasp_metrics = dataset.grasp_metrics(obj.key, grasps, gripper=gripper.name)
     metric_names = grasp_metrics[grasp_metrics.keys()[0]].keys()
     for metric_name in metric_names:
@@ -328,9 +335,36 @@ def generate_gqcnn_dataset(dataset_path,
                             # visualize if specified
                             if collision_free and config['vis']['candidate_grasps']:
                                 logging.info('Grasp %d' %(aligned_grasp.id))
+
+                                T_grasp_world = stable_pose.T_obj_world * aligned_grasp.T_grasp_obj
+
+                                print('center:{}'.format(T_grasp_world.translation))
+
+                                # T_grasp_camera = T_grasp_world
+                                # y_axis_camera = T_grasp_camera.y_axis[:2]
+                                # if np.linalg.norm(y_axis_camera) > 0:
+                                #     y_axis_camera = y_axis_camera / np.linalg.norm(y_axis_camera)
+                                
+                                # # compute grasp axis rotation in image space
+                                # rot_z = np.arccos(y_axis_camera[0])
+                                # if y_axis_camera[1] < 0:
+                                #     rot_z = -rot_z
+                                # while rot_z < 0:
+                                #     rot_z += 2 * np.pi
+                                # while rot_z > 2 * np.pi:
+                                #     rot_z -= 2 * np.pi
+
+                                # print('rot:{}'.format(rot_z))
+
+                                print('y-axis:{}'.format(T_grasp_world.y_axis[:2]))
+
+                                print('width:{}'.format(aligned_grasp.open_width))
+
+
                                 vis.figure()
                                 vis.gripper_on_object(gripper, aligned_grasp, obj, stable_pose.T_obj_world)
                                 vis.show()
+                                
                                 
         # save to file
         logging.info('Saving to file')
@@ -345,15 +379,16 @@ def generate_gqcnn_dataset(dataset_path,
     cur_pose_label = 0
     cur_obj_label = 0
     cur_image_label = 0
+    cur_data_label = 0
                 
     # render images for each stable pose of each object in the dataset
     render_modes = [RenderMode.SEGMASK, RenderMode.DEPTH_SCENE]
-    for dataset in datasets:
-        logging.info('Generating data for dataset %s' %(dataset.name))
-        
+    print("length of dataset:", len(datasets))
+    for dnum, dataset in enumerate(datasets):
         # iterate through all object keys
         object_keys = dataset.object_keys
         for obj_key in object_keys:
+            print("Working with object key %s" %(obj_key))
             obj = dataset[obj_key]
             if obj.key not in target_object_keys[dataset.name]:
                 continue
@@ -361,12 +396,12 @@ def generate_gqcnn_dataset(dataset_path,
             # read in the stable poses of the mesh
             stable_poses = dataset.stable_poses(obj.key)
             for i, stable_pose in enumerate(stable_poses):
-
+                print("Checking for stable pose %s" %(stable_pose.id))
                 # render images if stable pose is valid
                 if stable_pose.p > stable_pose_min_p:
+                    print("Stable pose is: ", stable_pose)
                     # log progress
                     logging.info('Rendering images for object %s in %s' %(obj.key, stable_pose.id))
-
                     # add to category maps
                     if obj.key not in obj_category_map.keys():
                         obj_category_map[obj.key] = cur_obj_label
@@ -393,9 +428,11 @@ def generate_gqcnn_dataset(dataset_path,
                     
                     render_start = time.time()
                     render_samples = urv.rvs(size=image_samples_per_stable_pose)
+                    print("Number of rendered samples:", len(render_samples))
                     render_stop = time.time()
                     logging.info('Rendering images took %.3f sec' %(render_stop - render_start))
-
+                    print("Image size of segmask is: ", render_samples[0].renders[RenderMode.DEPTH_SCENE].image.save(os.path.join(output_dir, "imgd.jpg")))
+                    '''
                     # visualize
                     if config['vis']['rendered_images']:
                         d = int(np.ceil(np.sqrt(image_samples_per_stable_pose)))
@@ -412,7 +449,7 @@ def generate_gqcnn_dataset(dataset_path,
                             vis2d.subplot(d,d,j+1)
                             vis2d.imshow(render_sample.renders[RenderMode.DEPTH_SCENE].image)
                         vis2d.show()
-
+                    '''
                     # tally total amount of data
                     num_grasps = len(candidate_grasps)
                     num_images = image_samples_per_stable_pose 
@@ -464,7 +501,7 @@ def generate_gqcnn_dataset(dataset_path,
                             # resize to image size
                             binary_im_tf = binary_im_tf.resize((im_final_height, im_final_width), interp='nearest')
                             depth_im_tf_table = depth_im_tf_table.resize((im_final_height, im_final_width))
-                            
+                            ''' 
                             # visualize the transformed images
                             if config['vis']['grasp_images']:
                                 grasp_center = Point(depth_im_tf_table.center,
@@ -496,7 +533,7 @@ def generate_gqcnn_dataset(dataset_path,
                                 T_obj_world = vis.mesh_stable_pose(obj.mesh, stable_pose.T_obj_world, style='surface', dim=0.5)
                                 vis.gripper(gripper, grasp, T_obj_world, color=(0.3,0.3,0.3))
                                 vis.show()
-
+                            '''
                             # form hand pose array
                             hand_pose = np.r_[grasp_2d.center.y,
                                               grasp_2d.center.x,
@@ -505,7 +542,6 @@ def generate_gqcnn_dataset(dataset_path,
                                               grasp_2d.center.y - shifted_camera_intr.cy,
                                               grasp_2d.center.x - shifted_camera_intr.cx,
                                               grasp_2d.width_px]
-         
 
                             # store to data buffers
                             tensor_datapoint['depth_ims_tf_table'] = depth_im_tf_table.raw_data
@@ -520,13 +556,14 @@ def generate_gqcnn_dataset(dataset_path,
                                 coll_free_metric = (1 * collision_free) * metric_val
                                 tensor_datapoint[metric_name] = coll_free_metric
                             tensor_dataset.add(tensor_datapoint)
+                            cur_data_label += 1
 
                         # update image label
                         cur_image_label += 1
 
                     # update pose label
                     cur_pose_label += 1
-
+                    
                     # force clean up
                     gc.collect()
 
@@ -536,14 +573,20 @@ def generate_gqcnn_dataset(dataset_path,
             # force clean up
             gc.collect()
 
+    print(cur_data_label)
+    
     # save last file
     tensor_dataset.flush()
-
+    print("Saving object category mappings")
     # save category mappings
     obj_cat_filename = os.path.join(output_dir, 'object_category_map.json')
+    print("done obj cat fname")
     json.dump(obj_category_map, open(obj_cat_filename, 'w'))
+    print("done json dump")
     pose_cat_filename = os.path.join(output_dir, 'pose_category_map.json')
+    print("done pose cat fname")
     json.dump(pose_category_map, open(pose_cat_filename, 'w'))
+    print("done json dump again")
 
 if __name__ == '__main__':
     logging.getLogger().setLevel(logging.INFO)
@@ -593,3 +636,4 @@ if __name__ == '__main__':
                            env_rv_params,
                            gripper_name,
                            config)
+    print("Done with dataset generation")

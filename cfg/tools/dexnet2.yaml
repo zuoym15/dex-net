@@ -1,31 +1,30 @@
 # Dex-Net Database params
-database_name: /home/sirdome/projects/dex-net/example.hdf5
-# database_name:  /home/sirdome/projects/dex-net/adexnet_2_database.hdf5
+database_name:  /home/sirdome/projects/dex-net/dexnet_2_database.hdf5
 
 # Dataset params
 gripper: yumi_metal_spline
 
 # Target objects
-target_objects:
-  mini_dexnet:
-    - bar_clamp
-    # - gearbox
-    # - nozzle
-    # - part1
-    # - part3
-    # - pawn
-    # - turbine_housing
-    # - vase
+# target_objects:
+#   mini_dexnet:
+#     - bar_clamp
+#     - gearbox
+#     - nozzle
+#     - part1
+#     - part3
+#     - pawn
+#     - turbine_housing
+#     - vase
 
 # target_objects:
 #   mini_dexnet:
 #     all
 
-# target_objects:
-#   3dnet:
-#     all
-#   kit:
-#     all
+target_objects:
+  3dnet:
+    all
+  kit:
+    all
   
 
 # Params for random variables controlling the environment (camera intr, camera and object poses)
@@ -59,6 +58,7 @@ env_rv_params:
 # Dataset gen params
 images_per_stable_pose: 50
 stable_pose_min_p: 0.0
+image_size: 32
 
 # GQ-CNN params
 gqcnn:
@@ -88,30 +88,13 @@ tensors:
     depth_ims_tf_table:
       dtype: float32
       channels: 1
-    obj_masks:
-      dtype: uint8
-      channels: 1
-    camera_poses:
-      dtype: float32
-      height: 7
-    camera_intrs:
-      dtype: float32
-      height: 4
     hand_poses:
       dtype: float32
       height: 7
-    collision_free:
-      dtype: uint32
-    obj_labels:
-      dtype: uint32
-    pose_labels:
-      dtype: uint32
-    image_labels:
-      dtype: uint32
 
 # Debugging params
 vis:
   candidate_grasps: 0
   rendered_images: 0
   grasp_images: 0
-debug: 0
+debug: 1

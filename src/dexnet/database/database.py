@@ -935,6 +935,7 @@ class Hdf5Dataset(Dataset):
             values of metrics for the grasps sorted in descending order, empty list if gripper not found
         """
         grasps = self.grasps(key, gripper=gripper, stable_pose_id=stable_pose_id)
+        print("Number of grasps fetched are :", len(grasps))
         if len(grasps) == 0:
             return [], []
         

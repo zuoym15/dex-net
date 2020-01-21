@@ -9,13 +9,13 @@ gripper: yumi_metal_spline
 target_objects:
   mini_dexnet:
     - bar_clamp
-    # - gearbox
-    # - nozzle
-    # - part1
-    # - part3
-    # - pawn
-    # - turbine_housing
-    # - vase
+    - gearbox
+    - nozzle
+    - part1
+    - part3
+    - pawn
+    - turbine_housing
+    - vase
 
 # target_objects:
 #   mini_dexnet:
@@ -57,8 +57,9 @@ env_rv_params:
   max_y: 0.1
 
 # Dataset gen params
-images_per_stable_pose: 50
+images_per_stable_pose: 5
 stable_pose_min_p: 0.0
+image_size: 32
 
 # GQ-CNN params
 gqcnn:
@@ -88,30 +89,13 @@ tensors:
     depth_ims_tf_table:
       dtype: float32
       channels: 1
-    obj_masks:
-      dtype: uint8
-      channels: 1
-    camera_poses:
-      dtype: float32
-      height: 7
-    camera_intrs:
-      dtype: float32
-      height: 4
     hand_poses:
       dtype: float32
       height: 7
-    collision_free:
-      dtype: uint32
-    obj_labels:
-      dtype: uint32
-    pose_labels:
-      dtype: uint32
-    image_labels:
-      dtype: uint32
 
 # Debugging params
 vis:
   candidate_grasps: 0
-  rendered_images: 0
+  rendered_images: 1
   grasp_images: 0
 debug: 0

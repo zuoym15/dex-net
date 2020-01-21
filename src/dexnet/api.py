@@ -639,6 +639,8 @@ class DexNet(object):
 
         for stable_pose in stable_poses:
             print 'Stable pose %s with p=%.3f' %(stable_pose.id, stable_pose.p)
+            print('rotation: {}'.format(stable_pose.T_obj_world.rotation))
+            print('translation: {}'.format(stable_pose.T_obj_world.translation))
             vis.figure()
             vis.mesh_stable_pose(obj.mesh.trimesh, stable_pose.T_obj_world,
                                  color=(0.5, 0.5, 0.5), style='surface')
